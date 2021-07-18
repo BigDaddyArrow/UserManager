@@ -1,4 +1,4 @@
-#UserManager
+# UserManager
 Сервис UserManager позволяет добавлять и возвращать сущность User.
 
 * `User` состоит из одного поля `full_name` и хранится в таблице `user`
