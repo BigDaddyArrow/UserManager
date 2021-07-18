@@ -17,5 +17,5 @@
 * Запуск сервера осуществляется функцией `StartUserManager`
   
 Используемые сторонние пакеты:
-* [https://github.com/go-chi/chi](https://github.com/go-chi/chi)
-* [github.com/lib/pq](github.com/lib/pq)
+* [github.com/go-chi/chi](https://github.com/go-chi/chi)
+* [github.com/lib/pq](https://github.com/lib/pq)
