@@ -1,18 +1,17 @@
 package main
+
 import (
 	"database/sql"
 	"fmt"
 	"github.com/go-chi/chi"
 	_ "github.com/lib/pq"
 	"net/http"
+	"sync"
 )
 
 type UserManager struct {
 	db *sql.DB
-}
-
-type user struct {
-	name string
+	m  sync.Mutex
 }
 
 func NewManager() (*UserManager, error) {
@@ -21,7 +20,7 @@ func NewManager() (*UserManager, error) {
 		return nil, err
 	}
 
-	var usr UserManager
+	usr := UserManager{m: sync.Mutex{}}
 
 	usr.db, err = sql.Open("postgres", fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
@@ -38,6 +37,7 @@ func StartUserManager() {
 	if err != nil {
 		panic(err)
 	}
+	defer srv.db.Close()
 
 	m := chi.NewMux()
 	m.Get("/", srv.HandleGet)
@@ -48,7 +48,7 @@ func StartUserManager() {
 	http.ListenAndServe(addr, m)
 }
 
-func(u *UserManager) HandleGet(r http.ResponseWriter, req *http.Request) {
+func (u *UserManager) HandleGet(r http.ResponseWriter, req *http.Request) {
 	name := req.URL.Query().Get("u")
 	if name == "" {
 		r.Write([]byte("Empty request"))
@@ -70,13 +70,14 @@ func(u *UserManager) HandleGet(r http.ResponseWriter, req *http.Request) {
 	r.Write([]byte("Successful GET request: " + name))
 }
 
-func(u *UserManager) HandlePost(r http.ResponseWriter, req *http.Request)  {
+func (u *UserManager) HandlePost(r http.ResponseWriter, req *http.Request) {
 	name := req.URL.Query().Get("p")
 	if name == "" {
 		r.Write([]byte("Empty request"))
 		return
 	}
 
+	u.m.Lock()
 	q, err := u.db.Query(`SELECT full_name FROM "user" WHERE full_name=$1`, name)
 	if err != nil {
 		r.Write([]byte("Query error"))
@@ -93,7 +94,7 @@ func(u *UserManager) HandlePost(r http.ResponseWriter, req *http.Request)  {
 		r.Write([]byte("Query error"))
 		return
 	}
+	u.m.Unlock()
 
 	r.Write([]byte("Successful POST request: " + name))
 }
-
